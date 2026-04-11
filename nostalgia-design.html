@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>نوستالجيا</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1080px;
+    height: 1350px;
+    overflow: hidden;
+    background: #0a0a0f;
+    font-family: 'Noto Naskh Arabic', serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .canvas {
+    width: 1080px;
+    height: 1350px;
+    position: relative;
+    background: linear-gradient(160deg, #0d0d1a 0%, #0a0a0f 40%, #12080a 100%);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Film grain overlay */
+  .canvas::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+    opacity: 0.3;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Vignette */
+  .canvas::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.85) 100%);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Horizontal light streak */
+  .light-streak {
+    position: absolute;
+    top: 50%;
+    left: -10%;
+    width: 120%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.15), rgba(212,175,55,0.4), rgba(212,175,55,0.15), transparent);
+    transform: translateY(-80px);
+    z-index: 2;
+  }
+
+  /* Top decorative line */
+  .top-bar {
+    position: absolute;
+    top: 90px;
+    left: 80px;
+    right: 80px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 5;
+  }
+
+  .bar-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.6));
+  }
+
+  .bar-line.right {
+    background: linear-gradient(270deg, transparent, rgba(212,175,55,0.6));
+  }
+
+  .bar-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #D4AF37;
+    box-shadow: 0 0 10px rgba(212,175,55,0.8);
+  }
+
+  .bar-label {
+    color: rgba(212,175,55,0.7);
+    font-size: 22px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    font-family: Georgia, serif;
+    font-style: italic;
+  }
+
+  /* Bottom bar */
+  .bottom-bar {
+    position: absolute;
+    bottom: 90px;
+    left: 80px;
+    right: 80px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 5;
+  }
+
+  /* Main content */
+  .content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    width: 100%;
+    padding: 0 80px;
+  }
+
+  /* Film strip decoration top */
+  .film-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 60px;
+  }
+
+  .film-hole {
+    width: 28px;
+    height: 20px;
+    border: 2px solid rgba(212,175,55,0.4);
+    border-radius: 4px;
+  }
+
+  .film-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.3), transparent);
+    max-width: 200px;
+  }
+
+  /* Year badge */
+  .year-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 50px;
+  }
+
+  .year-line {
+    width: 60px;
+    height: 1px;
+    background: rgba(212,175,55,0.5);
+  }
+
+  .year-text {
+    color: rgba(212,175,55,0.8);
+    font-size: 26px;
+    letter-spacing: 8px;
+    font-family: Georgia, serif;
+  }
+
+  /* Main title */
+  .main-title {
+    font-size: 200px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 20px;
+    background: linear-gradient(180deg,
+      #ffffff 0%,
+      #f0e6c0 20%,
+      #D4AF37 50%,
+      #8B6914 80%,
+      #5a4209 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 40px rgba(212,175,55,0.4));
+    letter-spacing: -4px;
+  }
+
+  /* Subtitle Arabic */
+  .subtitle-ar {
+    color: rgba(255,255,255,0.15);
+    font-size: 32px;
+    letter-spacing: 12px;
+    margin-bottom: 80px;
+    font-family: Georgia, serif;
+    text-transform: uppercase;
+  }
+
+  /* Divider with ornament */
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 80px;
+  }
+
+  .divider-line {
+    width: 180px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.6));
+  }
+
+  .divider-line.right {
+    background: linear-gradient(270deg, transparent, rgba(212,175,55,0.6));
+  }
+
+  .divider-diamond {
+    width: 10px;
+    height: 10px;
+    background: #D4AF37;
+    transform: rotate(45deg);
+    box-shadow: 0 0 15px rgba(212,175,55,0.9);
+  }
+
+  .divider-diamond-sm {
+    width: 5px;
+    height: 5px;
+    background: rgba(212,175,55,0.5);
+    transform: rotate(45deg);
+  }
+
+  /* Secondary title */
+  .secondary-title {
+    color: rgba(255,255,255,0.9);
+    font-size: 72px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    text-shadow: 0 0 60px rgba(255,255,255,0.1);
+  }
+
+  .secondary-sub {
+    color: rgba(212,175,55,0.6);
+    font-size: 36px;
+    letter-spacing: 4px;
+  }
+
+  /* Bottom film strip */
+  .bottom-film {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 70px;
+  }
+
+  /* Rotana logo placeholder */
+  .brand-tag {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .brand-name {
+    color: rgba(255,255,255,0.3);
+    font-size: 22px;
+    letter-spacing: 10px;
+    font-family: Georgia, serif;
+    text-transform: uppercase;
+  }
+
+  /* Ambient glow */
+  .glow-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 70%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .glow-top {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(100,50,150,0.12) 0%, transparent 70%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* Corner accents */
+  .corner {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    z-index: 5;
+  }
+
+  .corner.tl { top: 60px; right: 60px; border-top: 2px solid rgba(212,175,55,0.4); border-right: 2px solid rgba(212,175,55,0.4); }
+  .corner.tr { top: 60px; left: 60px; border-top: 2px solid rgba(212,175,55,0.4); border-left: 2px solid rgba(212,175,55,0.4); }
+  .corner.bl { bottom: 60px; right: 60px; border-bottom: 2px solid rgba(212,175,55,0.4); border-right: 2px solid rgba(212,175,55,0.4); }
+  .corner.br { bottom: 60px; left: 60px; border-bottom: 2px solid rgba(212,175,55,0.4); border-left: 2px solid rgba(212,175,55,0.4); }
+
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- Glows -->
+  <div class="glow-center"></div>
+  <div class="glow-top"></div>
+  <div class="light-streak"></div>
+
+  <!-- Corners -->
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="bar-line right"></div>
+    <div class="bar-dot"></div>
+    <div class="bar-label">Nostalgia</div>
+    <div class="bar-dot"></div>
+    <div class="bar-line"></div>
+  </div>
+
+  <!-- Main content -->
+  <div class="content">
+
+    <!-- Film strip top -->
+    <div class="film-strip">
+      <div class="film-line"></div>
+      <div class="film-hole"></div>
+      <div class="film-hole"></div>
+      <div class="film-hole"></div>
+      <div class="film-hole"></div>
+      <div class="film-hole"></div>
+      <div class="film-line"></div>
+    </div>
+
+    <!-- Year -->
+    <div class="year-badge">
+      <div class="year-line"></div>
+      <div class="year-text">ROTANA MUSIC</div>
+      <div class="year-line"></div>
+    </div>
+
+    <!-- Main Title -->
+    <div class="main-title">نوستالجيا</div>
+    <div class="subtitle-ar">NOSTALGIA</div>
+
+    <!-- Divider -->
+    <div class="divider">
+      <div class="divider-line right"></div>
+      <div class="divider-diamond-sm"></div>
+      <div class="divider-diamond"></div>
+      <div class="divider-diamond-sm"></div>
+      <div class="divider-line"></div>
+    </div>
+
+    <!-- Secondary -->
+    <div class="secondary-title">ذكـرى يوم ليك</div>
+    <div class="secondary-sub">A Memory Just For You</div>
+
+    <!-- Film strip bottom -->
+    <div class="bottom-film">
+      <div class="film-line"></div>
+      <div class="film-hole"></div>
+      <div class="film-hole"></div>
+      <div class="film-hole"></div>
+      <div class="film-hole"></div>
+      <div class="film-hole"></div>
+      <div class="film-line"></div>
+    </div>
+
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+    <div class="bar-line right"></div>
+    <div class="bar-dot"></div>
+    <div class="bar-label">روتانا ميوزك</div>
+    <div class="bar-dot"></div>
+    <div class="bar-line"></div>
+  </div>
+
+</div>
+</body>
+</html>
