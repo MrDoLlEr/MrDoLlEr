@@ -117,9 +117,12 @@ def wordmark(height: int = 150, latin: bool = True) -> Image.Image:
         " ".join("ROTANA TUNES"), f_lat, GOLD + (232,), rtl=False, pad=int(height * 0.18)
     )
     w = max(ar.width, lat.width)
-    out = Image.new("RGBA", (w, ar.height + lat.height - int(height * 0.16)), (0, 0, 0, 0))
+    # Keep clear air under the Arabic: the dots below "ي" otherwise land on the
+    # Latin line and read as an accent over the A.
+    drop = ar.height - int(height * 0.02)
+    out = Image.new("RGBA", (w, drop + lat.height), (0, 0, 0, 0))
     out.alpha_composite(ar, ((w - ar.width) // 2, 0))
-    out.alpha_composite(lat, ((w - lat.width) // 2, ar.height - int(height * 0.16)))
+    out.alpha_composite(lat, ((w - lat.width) // 2, drop))
     return out
 
 

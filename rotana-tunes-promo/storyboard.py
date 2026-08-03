@@ -425,8 +425,8 @@ def logo_reveal(dur: float) -> Renderer:
         op = fx.clamp01(tl / 0.14)
         cy = H * 0.44
         canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        halo = artext.glow(icon, 64, 0.85, tint=CRIMSON)
-        canvas.alpha_composite(fx.place((W, H), halo, W / 2, cy, scale * 1.18, 0, op * 0.85))
+        halo = radial_halo(int(icon_px * 2.4), CRIMSON, 2.9)
+        canvas.alpha_composite(fx.place((W, H), halo, W / 2, cy, scale, 0, op * 0.75))
         canvas.alpha_composite(fx.place((W, H), icon, W / 2, cy, scale, 0, op))
         arr = fx.composite(arr, canvas, 1.0)
 
@@ -467,6 +467,22 @@ def logo_reveal(dur: float) -> Renderer:
     return fn
 
 
+@lru_cache(maxsize=8)
+def radial_halo(size: int, colour: tuple[int, int, int] = CRIMSON, falloff: float = 2.6) -> Image.Image:
+    """A round lens glow.
+
+    Blurring the icon's own alpha gives a squarish halo, because the icon is a
+    squircle; a true radial blob reads as light instead of as a soft rectangle.
+    """
+    y, x = np.mgrid[0:size, 0:size].astype(np.float32)
+    r = np.sqrt(((x - size / 2) / (size / 2)) ** 2 + ((y - size / 2) / (size / 2)) ** 2)
+    a = np.clip(np.exp(-(r ** 2) * falloff) - np.exp(-falloff), 0, 1)
+    a /= a.max()
+    img = Image.new("RGBA", (size, size), tuple(colour) + (0,))
+    img.putalpha(Image.fromarray((a * 255).astype(np.uint8), "L"))
+    return img
+
+
 @lru_cache(maxsize=1)
 def _cta_scrim() -> np.ndarray:
     """Soft dark oval so the crimson lockup keeps contrast against the plate."""
@@ -492,8 +508,8 @@ def end_card(dur: float) -> Renderer:
         s = fx.spring(fx.clamp01(tl / 0.75), 1.5, 6.5)
         lock = ui.logo_lockup(282)
         canvas.alpha_composite(
-            fx.place((W, H), artext.glow(lock, 46, 0.9, tint=CRIMSON), W / 2, H * 0.335,
-                     0.9 + 0.1 * s, 0, fx.clamp01(tl / 0.25) * 0.8)
+            fx.place((W, H), radial_halo(880, CRIMSON, 3.1), W / 2, H * 0.30,
+                     0.9 + 0.1 * s, 0, fx.clamp01(tl / 0.25) * 0.62)
         )
         canvas.alpha_composite(
             fx.place((W, H), lock, W / 2, H * 0.335, 0.9 + 0.1 * s, 0, fx.clamp01(tl / 0.2))
