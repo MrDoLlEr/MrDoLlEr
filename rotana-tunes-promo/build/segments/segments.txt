@@ -1,0 +1,4 @@
+file '/workspace/rotana-tunes-promo/build/segments/seg_00.mp4'
+file '/workspace/rotana-tunes-promo/build/segments/seg_01.mp4'
+file '/workspace/rotana-tunes-promo/build/segments/seg_02.mp4'
+file '/workspace/rotana-tunes-promo/build/segments/seg_03.mp4'
