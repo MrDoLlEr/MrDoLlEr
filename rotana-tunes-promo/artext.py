@@ -54,13 +54,21 @@ def text_layer(
 
 
 def glow(layer: Image.Image, radius: int, strength: float, tint=None) -> Image.Image:
-    """Additive bloom behind a text layer."""
-    a = layer.split()[-1].filter(ImageFilter.GaussianBlur(radius))
+    """Soft halo behind a layer.
+
+    The canvas is padded before blurring; without the padding the blur is
+    clipped at the layer's bounding box and a strong glow fills the corners,
+    which reads as a hard rectangle behind the artwork.
+    """
+    pad = int(radius * 2.2)
+    padded = Image.new("RGBA", (layer.width + pad * 2, layer.height + pad * 2), (0, 0, 0, 0))
+    padded.alpha_composite(layer, (pad, pad))
+    a = padded.split()[-1].filter(ImageFilter.GaussianBlur(radius))
     if tint is None:
-        base = layer.copy()
-        base.putalpha(a.point(lambda v: int(v * strength)))
+        base = padded
+        base.putalpha(a.point(lambda v: int(min(255, v * strength))))
         return base
-    g = Image.new("RGBA", layer.size, tuple(tint) + (0,))
+    g = Image.new("RGBA", padded.size, tuple(tint) + (0,))
     g.putalpha(a.point(lambda v: int(min(255, v * strength))))
     return g
 

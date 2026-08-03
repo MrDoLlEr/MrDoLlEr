@@ -170,13 +170,16 @@ def cover_wall(t: float, arr: np.ndarray, intro: float = 0.0) -> np.ndarray:
         canvas.alpha_composite(strip, (x, -off + loop))
     canvas = canvas.rotate(-6, resample=Image.BICUBIC, center=(W // 2, H // 2))
     layer = np.asarray(canvas, dtype=np.float32) / 255.0
-    rgb, alpha = layer[..., :3], layer[..., 3:4]
+    # The covers have to out-punch the plate behind them or the "millions of
+    # songs" beat reads as a dark smudge.
+    rgb = np.clip(layer[..., :3] * 1.45 + 0.03, 0, 1)
+    alpha = layer[..., 3:4]
     fade = np.clip(intro, 0, 1)
     y = np.linspace(0, 1, H, dtype=np.float32)[:, None, None]
-    edge = np.clip(np.minimum(y / 0.22, (1 - y) / 0.22), 0, 1)
-    a = alpha * fade * edge * 0.97
+    edge = np.clip(np.minimum(y / 0.16, (1 - y) / 0.16), 0, 1)
+    a = alpha * fade * (0.35 + 0.65 * edge)
     out = arr * (1 - a) + rgb * a
-    return out
+    return fx.bloom(out, 0.72, 18, 0.22)
 
 
 @lru_cache(maxsize=1)
@@ -422,8 +425,8 @@ def logo_reveal(dur: float) -> Renderer:
         op = fx.clamp01(tl / 0.14)
         cy = H * 0.44
         canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        halo = artext.glow(icon, 60, 1.5, tint=CRIMSON)
-        canvas.alpha_composite(fx.place((W, H), halo, W / 2, cy, scale * 1.15, 0, op * 0.8))
+        halo = artext.glow(icon, 64, 0.85, tint=CRIMSON)
+        canvas.alpha_composite(fx.place((W, H), halo, W / 2, cy, scale * 1.18, 0, op * 0.85))
         canvas.alpha_composite(fx.place((W, H), icon, W / 2, cy, scale, 0, op))
         arr = fx.composite(arr, canvas, 1.0)
 
@@ -439,7 +442,9 @@ def logo_reveal(dur: float) -> Renderer:
             )
             arr = fx.composite(arr, ring.filter(ImageFilter.GaussianBlur(3)), 1.0, blend="screen")
 
-        wu = fx.ease_out(fx.clamp01((tl - 0.46) / 0.6), 2.6)
+        # The wipe has to finish early enough that the finished lockup actually
+        # gets screen time before the cut.
+        wu = fx.ease_out(fx.clamp01((tl - 0.34) / 0.34), 2.4)
         if wu > 0.01:
             mark = ui.wordmark(112)
             reveal = mark.crop((int(mark.width * (1 - wu)), 0, mark.width, mark.height))
@@ -448,6 +453,14 @@ def logo_reveal(dur: float) -> Renderer:
             arr = fx.composite(
                 arr, fx.place((W, H), lay, W / 2, cy + icon_px * 0.72, 1.0, 0, 1.0), 1.0
             )
+            if wu > 0.98:  # settle glint once the mark is whole
+                g = fx.clamp01((tl - 0.72) / 0.5)
+                arr = fx.composite(
+                    arr,
+                    fx.place((W, H), artext.glow(mark, 30, 0.9, tint=GOLD), W / 2,
+                             cy + icon_px * 0.72, 1.0, 0, math.sin(g * math.pi) * 0.55),
+                    1.0, blend="screen",
+                )
         arr = dust(tl, arr, 0.5)
         return arr
 
@@ -492,7 +505,7 @@ def end_card(dur: float) -> Renderer:
             b2 = ui.store_badge("GET IT ON", "Google Play", 372)
             gap = 36
             total = b1.width + b2.width + gap
-            y = H * 0.762 + (1 - bu) * 60
+            y = H * 0.728 + (1 - bu) * 55
             canvas.alpha_composite(
                 fx.place((W, H), b1, W / 2 - total / 2 + b1.width / 2, y, 1.0, 0, bu)
             )
@@ -500,7 +513,7 @@ def end_card(dur: float) -> Renderer:
                 fx.place((W, H), b2, W / 2 + total / 2 - b2.width / 2, y, 1.0, 0, bu)
             )
             sub = artext.text_layer(CTA_SUB, artext.font(FONT_BODY, 38), (205, 198, 208, 255))
-            canvas.alpha_composite(fx.place((W, H), sub, W / 2, H * 0.836, 1.0, 0, bu * 0.92))
+            canvas.alpha_composite(fx.place((W, H), sub, W / 2, H * 0.800, 1.0, 0, bu * 0.92))
 
         arr = fx.composite(arr, canvas, 1.0)
 
@@ -597,8 +610,8 @@ def build_shots() -> list[Shot]:
                              pan=((0, 60), (0, -40)), rot=(-0.5, 0.5), seed=4.0), "flash", 0.14),
         ("crowd", plate_shot("bg_09_crowd.png", d[6], z=(1.24, 1.06),
                              pan=((-40, -50), (30, 30)), rot=(1.4, -0.4), seed=6.0), "whip", 0.22),
-        ("wall", plate_shot("bg_04_pedestal.png", d[7], z=(1.10, 1.20), seed=7.0, ev=-0.6,
-                            overlay=lambda tl, a: dust(tl, cover_wall(tl, a, tl / 0.35), 0.4)),
+        ("wall", plate_shot("bg_04_pedestal.png", d[7], z=(1.10, 1.20), seed=7.0, ev=-0.35,
+                            overlay=lambda tl, a: dust(tl, cover_wall(tl, a, tl / 0.30), 0.35)),
          "glitch", 0.22),
         ("oud", plate_shot("bg_07_oud.png", d[8], z=(1.22, 1.06), pan=((50, -30), (-30, 20)),
                            rot=(0.9, -0.6), seed=8.0, ev=0.05,
