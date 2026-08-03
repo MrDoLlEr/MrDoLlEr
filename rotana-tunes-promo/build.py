@@ -102,7 +102,7 @@ def mux(picture: str, audio: str, dest: str, vertical: bool = True) -> None:
     subprocess.run(
         [FFMPEG, "-y", "-loglevel", "error", "-i", picture, "-i", audio,
          "-filter_complex" if not vertical else "-vf", vf,
-         "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
+         "-c:v", "libx264", "-preset", "slow", "-crf", "20", "-pix_fmt", "yuv420p",
          "-profile:v", "high", "-level", "4.1", "-movflags", "+faststart",
          "-c:a", "aac", "-b:a", "224k", "-ar", "48000", "-ac", "2",
          "-shortest", dest],
