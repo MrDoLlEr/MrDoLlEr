@@ -1,6 +1,6 @@
 [vo] reusing cached take
 [edit] 34.22s, 18 shots, 17 cuts
-[audio] mixed in 1.0s -> /workspace/rotana-tunes-promo/build/mix.wav
+[audio] mixed in 0.9s -> /workspace/rotana-tunes-promo/build/mix.wav
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
@@ -9,25 +9,25 @@
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
-[render] worker0 1/257 frames  0.99 fps  eta 259s
-[render] worker0 21/257 frames  1.91 fps  eta 123s
-[render] worker0 41/257 frames  1.92 fps  eta 113s
-[render] worker0 61/257 frames  1.78 fps  eta 110s
-[render] worker0 81/257 frames  1.77 fps  eta 99s
-[render] worker0 101/257 frames  1.54 fps  eta 101s
-[render] worker0 121/257 frames  1.52 fps  eta 89s
-[render] worker0 141/257 frames  1.48 fps  eta 78s
-[render] worker0 161/257 frames  1.40 fps  eta 69s
+[render] worker0 1/257 frames  1.00 fps  eta 255s
+[render] worker0 21/257 frames  1.94 fps  eta 121s
+[render] worker0 41/257 frames  1.99 fps  eta 109s
+[render] worker0 61/257 frames  1.80 fps  eta 109s
+[render] worker0 81/257 frames  1.73 fps  eta 102s
+[render] worker0 101/257 frames  1.53 fps  eta 102s
+[render] worker0 121/257 frames  1.51 fps  eta 90s
+[render] worker0 141/257 frames  1.45 fps  eta 80s
+[render] worker0 161/257 frames  1.37 fps  eta 70s
 [render] worker0 181/257 frames  1.37 fps  eta 55s
-[render] worker0 201/257 frames  1.38 fps  eta 40s
-[render] worker0 221/257 frames  1.36 fps  eta 26s
-[render] worker0 241/257 frames  1.36 fps  eta 12s
+[render] worker0 201/257 frames  1.37 fps  eta 41s
+[render] worker0 221/257 frames  1.35 fps  eta 27s
+[render] worker0 241/257 frames  1.35 fps  eta 12s
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
 /usr/bin/ffmpeg: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
-[render] 231.0s -> /workspace/rotana-tunes-promo/build/picture.mp4
+[render] 229.9s -> /workspace/rotana-tunes-promo/build/picture.mp4
 [out] /workspace/rotana-tunes-promo/out/rotana_tunes_promo_9x16.mp4
 [out] /workspace/rotana-tunes-promo/out/rotana_tunes_promo_16x9.mp4
