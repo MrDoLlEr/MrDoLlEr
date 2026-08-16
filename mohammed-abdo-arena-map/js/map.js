@@ -159,6 +159,56 @@ function roundRect(x, y, w, h, r) {
   ctx.roundRect(x, y, w, h, r);
 }
 
+function drawRoadLabels() {
+  const rank = { motorway: 0, trunk: 0, primary: 1, secondary: 2, tertiary: 3 };
+  const candidates = osm.highways
+    .filter((r) => (r.name || r.name_en) && (r.road_key || rank[r.highway] !== undefined))
+    .sort((a, b) => (rank[a.highway] ?? 9) - (rank[b.highway] ?? 9));
+  const placed = [];
+  const done = new Set();
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  for (const r of candidates) {
+    const name = r.name || r.name_en;
+    if (done.has(name)) continue;
+    const pts = r.pts.map((p) => proj(p[0], p[1]));
+    let bestLen = -1, bi = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const l = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+      if (l > bestLen) { bestLen = l; bi = i; }
+    }
+    const main = r.road_key || (rank[r.highway] ?? 9) <= 1;
+    if (bestLen < (main ? 66 : 96)) continue;
+    const a = pts[bi], b = pts[bi + 1];
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    if (mx < 26 || mx > canvas.width - 26 || my < 22 || my > canvas.height - 22) continue;
+    let ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    if (ang > Math.PI / 2) ang -= Math.PI;
+    if (ang < -Math.PI / 2) ang += Math.PI;
+    const size = main ? 14 : (rank[r.highway] === 2 ? 13 : 12);
+    ctx.font = `700 ${size}px "Noto Naskh Arabic", "DejaVu Sans", sans-serif`;
+    const w = ctx.measureText(name).width;
+    const hx = w / 2 + 6, hy = size / 2 + 5;
+    const box = [mx - hx, my - hy, mx + hx, my + hy];
+    if (placed.some((q) => box[0] < q[2] && box[2] > q[0] && box[1] < q[3] && box[3] > q[1])) continue;
+    placed.push(box);
+    done.add(name);
+    ctx.save();
+    ctx.translate(mx, my);
+    ctx.rotate(ang);
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = "rgba(255,255,255,.92)";
+    ctx.strokeText(name, 0, 0);
+    ctx.fillStyle = main ? "#33383f" : "#565b63";
+    ctx.fillText(name, 0, 0);
+    ctx.restore();
+    if (placed.length >= 26) break;
+  }
+  ctx.restore();
+}
+
 function drawFrame() {
   const route = routes.routes[active];
   proj = makeProj(route.path);
@@ -175,6 +225,8 @@ function drawFrame() {
   });
   [...osm.buildings].sort((a, b) => meters(a.pts[0][0], a.pts[0][1])[1] - meters(b.pts[0][0], b.pts[0][1])[1])
     .forEach(drawBuilding);
+
+  drawRoadLabels();
 
   ctx.font = "700 14px DejaVu Sans, sans-serif";
   ctx.fillStyle = "#2a2d34";
