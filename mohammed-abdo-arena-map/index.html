@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>مسرح محمد عبده — خريطة المداخل</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="top">
+    <img class="brand-logo" src="assets/logo.png" alt="Mohammed Abdo Arena" />
+    <div class="titles">
+      <h1>مسرح محمد عبده</h1>
+      <p>خريطة المداخل — نفس أسلوب أنيميشن Coca-Cola Arena</p>
+    </div>
+    <div class="titles en" dir="ltr">
+      <h1>Mohammed Abdo Arena</h1>
+      <p>Entrance map · looping route animations</p>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <main>
+    <section class="stage">
+      <canvas id="map" width="1280" height="720"></canvas>
+      <div class="pin-note">الشعار مثبت على موقع المسرح في OSM: 24.772322°N, 46.606507°E</div>
+    </section>
+    <aside class="legend" id="legend"></aside>
+  </main>
+
+  <footer>
+    <a id="gifLink" href="#">تنزيل GIF</a>
+    <a id="mp4Link" href="#">تنزيل MP4</a>
+    <span dir="ltr">Logo pin is locked to the theatre building, not the path end.</span>
+  </footer>
+
+  <script src="js/map.js"></script>
+</body>
+</html>
