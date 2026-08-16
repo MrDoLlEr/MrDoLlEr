@@ -1,0 +1,10 @@
+build/segments/
+build/frames/
+build/picture.mp4
+build/*.wav
+build/f_*.png
+build/prev_*.png
+build/full_*.png
+build/spec_*.png
+build/contact_sheet.png
+__pycache__/

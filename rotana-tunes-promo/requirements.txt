@@ -1,0 +1,10 @@
+# Rendering and audio
+pillow>=11.0          # must be built with Raqm for Arabic shaping
+numpy>=2.0
+scipy>=1.14
+
+# Arabic voice-over
+piper-tts>=1.3
+
+# Optional: the transcription check in verify.py
+faster-whisper>=1.1
