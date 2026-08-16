@@ -1,0 +1,8 @@
+# Python creative stack for this multimedia workstation.
+# Arabic text on images needs Pillow with raqm (HarfBuzz + FriBidi).
+Pillow>=10
+arabic-reshaper>=3.0
+python-bidi>=0.6
+fonttools>=4.50
+cairosvg>=2.7
+numpy>=1.26
