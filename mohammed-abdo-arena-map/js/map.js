@@ -111,30 +111,26 @@ function pointAt(path, tt) {
 function drawPin() {
   const [x, y] = proj(THEATER.lon, THEATER.lat);
   const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 250);
-  const r = 46 + pulse * 3;
+  const size = 92 + pulse * 6;
+  const cx = x, cy = y - 8;
+  const half = size / 2;
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(x, y - 8, r, 0, Math.PI * 2);
-  ctx.fillStyle = "#c4101c";
-  ctx.shadowColor = "rgba(0,0,0,.28)";
+  ctx.shadowColor = "rgba(0,0,0,.3)";
   ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.roundRect(cx - half, cy - half, size, size, 14);
+  ctx.fillStyle = "#f5b301";
   ctx.fill();
   ctx.shadowBlur = 0;
+  const pad = 7;
   ctx.beginPath();
-  ctx.arc(x, y - 8, r - 8, 0, Math.PI * 2);
+  ctx.roundRect(cx - half + pad, cy - half + pad, size - 2 * pad, size - 2 * pad, 9);
   ctx.fillStyle = "#fff";
   ctx.fill();
   if (logo) {
-    const s = (r - 10) * 2;
-    ctx.drawImage(logo, x - s / 2, y - 8 - s / 2, s, s);
+    const s = size - 2 * pad - 8;
+    ctx.drawImage(logo, cx - s / 2, cy - s / 2, s, s);
   }
-  ctx.beginPath();
-  ctx.moveTo(x - 8, y + r - 14);
-  ctx.lineTo(x + 8, y + r - 14);
-  ctx.lineTo(x, y + r + 10);
-  ctx.closePath();
-  ctx.fillStyle = "#c4101c";
-  ctx.fill();
   ctx.restore();
 }
 
@@ -159,6 +155,65 @@ function roundRect(x, y, w, h, r) {
   ctx.roundRect(x, y, w, h, r);
 }
 
+function drawRoadLabels() {
+  const rank = { motorway: 0, trunk: 0, primary: 1, secondary: 2, tertiary: 3 };
+  const skip = ["footway", "path", "steps", "cycleway", "construction"];
+  const candidates = osm.highways
+    .filter((r) => (r.name || r.name_en) && !skip.includes(r.highway))
+    .sort((a, b) => (rank[a.highway] ?? 5) - (rank[b.highway] ?? 5));
+  const placed = [];
+  const done = new Set();
+  const M = 5;
+  const overlap = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  for (const r of candidates) {
+    const name = r.name || r.name_en;
+    if (done.has(name)) continue;
+    const pts = r.pts.map((p) => proj(p[0], p[1]));
+    const rk = rank[r.highway] ?? 5;
+    const main = r.road_key || rk <= 1;
+    const minLen = main ? 50 : rk <= 3 ? 62 : 74;
+    const size = main ? 18 : rk === 2 ? 17 : rk === 3 ? 16 : 14;
+    ctx.font = `700 ${size}px "Noto Naskh Arabic", "DejaVu Sans", sans-serif`;
+    const halfW = ctx.measureText(name).width / 2 + 7;
+    const halfH = size / 2 + 6;
+    const segs = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      segs.push({ i, len: Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) });
+    }
+    segs.sort((p, q) => q.len - p.len);
+    for (const seg of segs) {
+      if (seg.len < minLen) break;
+      const a = pts[seg.i], b = pts[seg.i + 1];
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      let ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      if (ang > Math.PI / 2) ang -= Math.PI;
+      if (ang < -Math.PI / 2) ang += Math.PI;
+      const ca = Math.abs(Math.cos(ang)), sa = Math.abs(Math.sin(ang));
+      const ex = halfW * ca + halfH * sa, ey = halfW * sa + halfH * ca;
+      const box = [mx - ex, my - ey, mx + ex, my + ey];
+      if (box[0] < M || box[1] < M || box[2] > canvas.width - M || box[3] > canvas.height - M) continue;
+      if (placed.some((p) => overlap(box, p))) continue;
+      placed.push(box);
+      done.add(name);
+      ctx.save();
+      ctx.translate(mx, my);
+      ctx.rotate(ang);
+      ctx.lineWidth = 4.5;
+      ctx.strokeStyle = "rgba(255,255,255,.96)";
+      ctx.strokeText(name, 0, 0);
+      ctx.fillStyle = main ? "#23262c" : "#333941";
+      ctx.fillText(name, 0, 0);
+      ctx.restore();
+      break;
+    }
+  }
+  ctx.restore();
+}
+
 function drawFrame() {
   const route = routes.routes[active];
   proj = makeProj(route.path);
@@ -176,6 +231,8 @@ function drawFrame() {
   [...osm.buildings].sort((a, b) => meters(a.pts[0][0], a.pts[0][1])[1] - meters(b.pts[0][0], b.pts[0][1])[1])
     .forEach(drawBuilding);
 
+  drawRoadLabels();
+
   ctx.font = "700 14px DejaVu Sans, sans-serif";
   ctx.fillStyle = "#2a2d34";
   osm.pois.forEach((p) => {
@@ -188,15 +245,6 @@ function drawFrame() {
   const drawn = route.path.slice(0, n).map((p) => [p.lon, p.lat]);
   strokeRoad(drawn, "rgba(220,20,30,.28)", 18);
   strokeRoad(drawn, "#dc141e", 8);
-  route.markers.forEach((m) => {
-    const [x, y] = proj(m.lon, m.lat);
-    ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2);
-    ctx.fillStyle = "#468cd2"; ctx.fill();
-    ctx.fillStyle = "#fff"; ctx.font = "700 13px sans-serif";
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(String(m.n), x, y);
-    ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
-  });
   drawCar(pointAt(route.path, t));
   drawPin();
 }
