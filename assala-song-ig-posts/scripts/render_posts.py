@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""Render two Instagram 4:5 interactive posts for Assala — أصالة."""
+"""Photo-led Instagram 4:5 posts for Assala — أصالة. Official portraits, not empty type."""
 
 from __future__ import annotations
 
-import math
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "assets" / "source"
 OUT = ROOT / "exports"
-PREVIEW = ROOT / "preview"
 
-W, H = 1080, 1350  # Instagram portrait 4:5
+W, H = 1080, 1350
 
 FONTS = {
     "amiri": "/usr/share/fonts/opentype/fonts-hosny-amiri/Amiri-Regular.ttf",
@@ -24,21 +23,10 @@ FONTS = {
     "kufi": "/usr/share/fonts/truetype/noto/NotoKufiArabic-Regular.ttf",
 }
 
-NIGHT = {
-    "bg": (16, 10, 9),
-    "ink": (246, 236, 218),
-    "muted": (186, 156, 132),
-    "gold": (201, 168, 112),
-    "wine": (148, 40, 48),
-}
-
-DAY = {
-    "bg": (239, 228, 208),
-    "ink": (28, 16, 12),
-    "muted": (104, 72, 54),
-    "gold": (132, 92, 42),
-    "wine": (122, 28, 36),
-}
+GOLD = (212, 178, 118)
+CREAM = (250, 242, 228)
+WINE = (150, 36, 44)
+MUTED = (210, 190, 168)
 
 
 def font(key: str, size: int) -> ImageFont.FreeTypeFont:
@@ -51,183 +39,161 @@ def ar(draw: ImageDraw.ImageDraw, xy, text, **kwargs):
     draw.text(xy, text, **kwargs)
 
 
-def grain(img: Image.Image, amount: float = 0.03) -> Image.Image:
-    arr = np.asarray(img).astype(np.float32)
-    noise = np.random.default_rng(11).normal(0, 255 * amount, arr.shape[:2])
-    for c in range(3):
-        arr[:, :, c] = np.clip(arr[:, :, c] + noise, 0, 255)
-    return Image.fromarray(arr.astype(np.uint8))
+def to_rgb(im: Image.Image, bg=(24, 20, 22)) -> Image.Image:
+    if im.mode == "P":
+        im = im.convert("RGBA")
+    if im.mode == "RGBA":
+        base = Image.new("RGB", im.size, bg)
+        base.paste(im, mask=im.split()[-1])
+        return base
+    return im.convert("RGB")
 
 
-def star(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, fill) -> None:
-    pts = []
-    for i in range(16):
-        ang = math.radians(-90 + i * 22.5)
-        rad = r if i % 2 == 0 else r * 0.38
-        pts.append((cx + rad * math.cos(ang), cy + rad * math.sin(ang)))
-    draw.polygon(pts, fill=fill)
+def crop_to_45(im: Image.Image, focus: str = "center", tight: float = 1.0) -> Image.Image:
+    """Crop any image to 4:5, then scale to Instagram size."""
+    im = to_rgb(im)
+    tw, th = im.size
+    if tight < 1.0:
+        nw, nh = int(tw * tight), int(th * tight)
+        left = (tw - nw) // 2
+        top = int((th - nh) * 0.18)
+        im = im.crop((left, top, left + nw, top + nh))
+        tw, th = im.size
+    target = 4 / 5
+    if tw / th > target:
+        nw = int(th * target)
+        if focus == "right":
+            left = tw - nw
+        elif focus == "left":
+            left = 0
+        else:
+            left = (tw - nw) // 2
+        im = im.crop((left, 0, left + nw, th))
+    else:
+        nh = int(tw / target)
+        top = max(0, int((th - nh) * 0.12))
+        if top + nh > th:
+            top = th - nh
+        im = im.crop((0, top, tw, top + nh))
+    return im.resize((W, H), Image.Resampling.LANCZOS)
 
 
-def plate(pal: dict) -> Image.Image:
-    img = Image.new("RGB", (W, H), pal["bg"])
-    draw = ImageDraw.Draw(img)
-    gold = pal["gold"]
-    m = 44
-    draw.rectangle([m, m, W - m, H - m], outline=gold, width=1)
-    draw.rectangle([m + 10, m + 10, W - m - 10, H - m - 10], outline=gold, width=1)
-    for cx, cy in (
-        (m + 10, m + 10),
-        (W - m - 10, m + 10),
-        (m + 10, H - m - 10),
-        (W - m - 10, H - m - 10),
-    ):
-        star(draw, cx, cy, 9, gold)
-    return img
+def cover_album_type(im: Image.Image) -> Image.Image:
+    """Paint out leftover Rotana single title so only Assala remains."""
+    im = to_rgb(im)
+    red = im.getpixel((24, 24))
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, 470, 820], fill=red)
+    return im
 
 
-def rule(draw: ImageDraw.ImageDraw, y: int, pal: dict) -> None:
-    draw.line([(160, y), (500, y)], fill=pal["gold"], width=1)
-    draw.line([(580, y), (920, y)], fill=pal["gold"], width=1)
-    star(draw, 540, y, 8, pal["gold"])
+def grade(im: Image.Image, contrast=1.12, color=1.06, brightness=0.97) -> Image.Image:
+    im = ImageEnhance.Contrast(im).enhance(contrast)
+    im = ImageEnhance.Color(im).enhance(color)
+    im = ImageEnhance.Brightness(im).enhance(brightness)
+    return im
 
 
-def paste_mask(base: Image.Image, mask: Image.Image, color: tuple[int, int, int], xy=(0, 0)) -> None:
-    layer = Image.new("RGBA", base.size, (0, 0, 0, 0))
-    tint = Image.new("RGBA", mask.size, (*color, 255))
-    layer.paste(tint, xy, mask)
-    composed = Image.alpha_composite(base.convert("RGBA"), layer)
-    base.paste(composed.convert("RGB"))
+def vignette(im: Image.Image, strength=0.55) -> Image.Image:
+    arr = np.asarray(im).astype(np.float32)
+    y, x = np.ogrid[:H, :W]
+    cy, cx = H * 0.38, W * 0.5
+    r = np.sqrt(((x - cx) / (W * 0.72)) ** 2 + ((y - cy) / (H * 0.70)) ** 2)
+    shade = np.clip(1 - strength * np.clip(r - 0.55, 0, 1) ** 1.4, 0.35, 1)
+    arr *= shade[..., None]
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
 
-def crescent_mask(size: int = 96) -> Image.Image:
-    m = Image.new("L", (size, size), 0)
-    d = ImageDraw.Draw(m)
-    pad = 4
-    d.ellipse([pad, pad, size - pad, size - pad], fill=255)
-    # Offset disc eats the right side → classic waxing crescent
-    d.ellipse([int(size * 0.28), pad, size + 8, size - pad], fill=0)
-    return m
+def bottom_scrim(im: Image.Image, start=0.42, end=0.98) -> Image.Image:
+    arr = np.asarray(im).astype(np.float32)
+    y = np.linspace(0, 1, H)[:, None, None]
+    t = np.clip((y - start) / (end - start), 0, 1)
+    t = t ** 1.35
+    dark = np.array([8, 6, 6], dtype=np.float32)
+    arr = arr * (1 - t) + dark * t
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
 
-def sun_mask(size: int = 96) -> Image.Image:
-    m = Image.new("L", (size, size), 0)
-    d = ImageDraw.Draw(m)
-    c = size // 2
-    r = 22
-    d.ellipse([c - r, c - r, c + r, c + r], outline=255, width=2)
-    d.ellipse([c - 3, c - 3, c + 3, c + 3], fill=255)
-    for i in range(12):
-        a = math.radians(-90 + i * 30)
-        inner, outer = r + 8, r + 18
-        d.line(
-            [
-                (c + math.cos(a) * inner, c + math.sin(a) * inner),
-                (c + math.cos(a) * outer, c + math.sin(a) * outer),
-            ],
-            fill=255,
-            width=2,
-        )
-    return m
-
-
-def header(draw, pal, kicker: str) -> None:
-    ar(draw, (W // 2, 88), kicker, font=font("kufi", 22), fill=pal["gold"], anchor="mm")
-
-
-def footer(draw, pal, cta: str) -> None:
-    rule(draw, 1188, pal)
-    ar(draw, (W // 2, 1240), cta, font=font("plex_sb", 30), fill=pal["ink"], anchor="mm")
-    ar(
-        draw,
-        (W // 2, 1294),
-        "كلمات وألحان أمجد جمعة   ·   توزيع فؤاد جنيد",
-        font=font("plex", 17),
-        fill=pal["muted"],
-        anchor="mm",
-    )
+def shadow_text(draw, xy, text, font_obj, fill, anchor="mm", shadow=(0, 0, 0, 180)):
+    x, y = xy
+    # soft shadow
+    for dx, dy in ((2, 2), (0, 3), (-1, 2)):
+        ar(draw, (x + dx, y + dy), text, font=font_obj, fill=(0, 0, 0), anchor=anchor)
+    ar(draw, xy, text, font=font_obj, fill=fill, anchor=anchor)
 
 
 def post_one() -> Image.Image:
-    pal = NIGHT
-    img = plate(pal)
-    paste_mask(img, crescent_mask(110), pal["gold"], (485, 118))
-    draw = ImageDraw.Draw(img)
-    header(draw, pal, "أصالة   ·   إصدار جديد")
+    photo = crop_to_45(Image.open(SRC / "rotana-portrait.png"), "center", tight=0.88)
+    photo = grade(photo, contrast=1.14, color=1.04, brightness=0.96)
+    photo = vignette(photo, 0.5)
+    photo = bottom_scrim(photo, start=0.46, end=1.0)
 
-    ar(draw, (W // 2, 292), "أي بيت أقوى؟", font=font("amiri_b", 82), fill=pal["ink"], anchor="mm")
-    ar(
-        draw,
-        (W // 2, 368),
-        "علّق بالرقم في الكومنت",
-        font=font("plex", 26),
-        fill=pal["muted"],
-        anchor="mm",
-    )
-    rule(draw, 422, pal)
+    layer = photo.convert("RGBA")
+    ui = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(ui)
 
-    verses = [
+    shadow_text(d, (W // 2, 58), "أصالة  ·  إصدار جديد", font("kufi", 22), GOLD)
+
+    # Interactive stack sits on the dress, not the face
+    shadow_text(d, (W // 2, 790), "أي بيت أقوى؟", font("amiri_b", 62), CREAM)
+    shadow_text(d, (W // 2, 846), "علّق بالرقم في الكومنت", font("plex", 24), MUTED)
+
+    options = [
         ("١", "وأنا من اسمي أصالة", "يعني ما أخون الوعد"),
         ("٢", "إني أنسى الحب؟ لا لا", "صفر بالمية احتمالا"),
     ]
-    y = 478
-    for i, (num, line1, line2) in enumerate(verses):
-        # Number leads from the right; verse sits in the optical center.
-        ar(draw, (918, y + 72), num, font=font("amiri_b", 118), fill=pal["wine"], anchor="mm")
-        draw.line([(800, y + 16), (800, y + 128)], fill=pal["gold"], width=1)
-        ar(draw, (430, y + 36), line1, font=font("amiri", 46), fill=pal["ink"], anchor="mm")
-        ar(draw, (430, y + 108), line2, font=font("amiri_b", 42), fill=pal["gold"], anchor="mm")
-        if i == 0:
-            draw.line([(160, y + 196), (920, y + 196)], fill=pal["gold"], width=1)
-        y += 268
+    y = 882
+    for num, l1, l2 in options:
+        x0, x1 = 70, 1010
+        y1 = y + 118
+        d.rectangle([x0, y, x1, y1], fill=(8, 6, 6, 210), outline=GOLD, width=1)
+        d.rectangle([x1 - 92, y, x1, y1], fill=(*WINE, 230))
+        ar(d, (x1 - 46, y + 59), num, font=font("amiri_b", 52), fill=CREAM, anchor="mm")
+        ar(d, (x1 - 118, y + 40), l1, font=font("amiri", 30), fill=CREAM, anchor="rm")
+        ar(d, (x1 - 118, y + 84), l2, font=font("amiri_b", 28), fill=GOLD, anchor="rm")
+        y += 132
 
-    footer(draw, pal, "اكتب ١     أو     ٢")
-    return grain(img, 0.026)
+    d.rectangle([70, 1230, 1010, 1298], fill=(8, 6, 6, 220), outline=GOLD, width=1)
+    ar(d, (W // 2, 1264), "اكتب ١     أو     ٢", font=font("plex_sb", 28), fill=CREAM, anchor="mm")
+
+    out = Image.alpha_composite(layer, ui).convert("RGB")
+    return out
 
 
 def post_two() -> Image.Image:
-    pal = DAY
-    img = plate(pal)
-    paste_mask(img, sun_mask(120), pal["gold"], (480, 112))
-    draw = ImageDraw.Draw(img)
-    header(draw, pal, "أصالة   ·   إصدار جديد")
+    raw = cover_album_type(Image.open(SRC / "album-leheqt.jpg"))
+    photo = crop_to_45(raw, "right", tight=0.92)
+    photo = grade(photo, contrast=1.10, color=1.08, brightness=0.95)
+    photo = vignette(photo, 0.42)
+    photo = bottom_scrim(photo, start=0.50, end=1.0)
 
-    ar(draw, (W // 2, 292), "كمّل البيت", font=font("amiri_b", 82), fill=pal["ink"], anchor="mm")
-    ar(
-        draw,
-        (W // 2, 368),
-        "اكتب الكلمة الناقصة في التعليق",
-        font=font("plex", 26),
-        fill=pal["muted"],
-        anchor="mm",
-    )
-    rule(draw, 424, pal)
+    layer = photo.convert("RGBA")
+    ui = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(ui)
 
-    ar(draw, (W // 2, 530), "وأنا من اسمي", font=font("amiri", 54), fill=pal["ink"], anchor="mm")
+    shadow_text(d, (W // 2, 58), "أصالة  ·  إصدار جديد", font("kufi", 22), GOLD)
+    shadow_text(d, (W // 2, 720), "كمّل البيت", font("amiri_b", 68), CREAM)
+    shadow_text(d, (W // 2, 786), "الكلمة الناقصة في التعليق", font("plex", 24), MUTED)
 
-    # Empty manuscript field — the interaction
-    draw.rectangle([200, 600, 880, 742], outline=pal["wine"], width=2)
-    x = 260
-    while x < 820:
-        draw.line([(x, 688), (min(x + 18, 820), 688)], fill=pal["gold"], width=2)
-        x += 30
+    ar(d, (W // 2, 860), "وأنا من اسمي", font=font("amiri", 40), fill=CREAM, anchor="mm")
 
-    ar(draw, (W // 2, 860), "يعني ما أخون الوعد", font=font("amiri_b", 48), fill=pal["ink"], anchor="mm")
-    ar(
-        draw,
-        (W // 2, 980),
-        "ومنشن شخص ما يخون الوعد",
-        font=font("plex_m", 28),
-        fill=pal["muted"],
-        anchor="mm",
-    )
+    d.rectangle([140, 892, 940, 1028], fill=(8, 6, 6, 200), outline=WINE, width=2)
+    x = 210
+    while x < 870:
+        d.line([(x, 980), (min(x + 16, 870), 980)], fill=GOLD, width=2)
+        x += 28
 
-    footer(draw, pal, "الكلمة  +  منشن")
-    return grain(img, 0.02)
+    ar(d, (W // 2, 1088), "يعني ما أخون الوعد", font=font("amiri_b", 38), fill=GOLD, anchor="mm")
+    ar(d, (W // 2, 1154), "ومنشن شخص ما يخون الوعد", font=font("plex_m", 24), fill=MUTED, anchor="mm")
+
+    d.rectangle([70, 1230, 1010, 1298], fill=(8, 6, 6, 220), outline=GOLD, width=1)
+    ar(d, (W // 2, 1264), "اكتب الكلمة  +  منشن", font=font("plex_sb", 28), fill=CREAM, anchor="mm")
+
+    return Image.alpha_composite(layer, ui).convert("RGB")
 
 
 def save(img: Image.Image, name: str) -> Path:
     OUT.mkdir(parents=True, exist_ok=True)
-    PREVIEW.mkdir(parents=True, exist_ok=True)
     path = OUT / name
     img.save(path, "PNG", optimize=True)
     return path
@@ -236,8 +202,6 @@ def save(img: Image.Image, name: str) -> Path:
 def main() -> None:
     p1 = save(post_one(), "01-ayy-bayt-aqwa.png")
     p2 = save(post_two(), "02-kammil-albayt.png")
-    print(p1)
-    print(p2)
     for p in (p1, p2):
         im = Image.open(p)
         print(p.name, im.size, im.mode)
