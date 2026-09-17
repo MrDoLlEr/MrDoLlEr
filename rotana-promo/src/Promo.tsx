@@ -8,61 +8,29 @@ import {
   spring,
   Audio,
   staticFile,
+  Easing,
 } from 'remotion';
-import {C, SCENES, layout, Format} from './theme';
+import {C, SCENES, WIPES, layout, Format} from './theme';
 import {Backdrop} from './Backdrop';
-import {Words, Rule, fontFamily} from './Type';
+import {Words, fontFamily} from './Type';
 import {Logo} from './Logo';
+import {SwooshWipe, OrbField, Ticker, MaskReveal, Slam} from './Motion';
 import {HAS_MUSIC_FILE} from './logoFlag';
 
-/**
- * Wraps a scene in a quick push-in + push-out so cuts read as hard and fast
- * rather than as dissolves. `hold` is the scene length in frames.
- */
-const Cut: React.FC<{hold: number; children: React.ReactNode}> = ({hold, children}) => {
-  const frame = useCurrentFrame();
-  const inScale = interpolate(frame, [0, 8], [1.06, 1], {extrapolateRight: 'clamp'});
-  const outScale = interpolate(frame, [hold - 7, hold], [1, 0.965], {
-    extrapolateLeft: 'clamp',
-  });
-  const opacity = interpolate(
-    frame,
-    [0, 3, hold - 5, hold],
-    [0, 1, 1, 0],
-    {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}
-  );
-  return (
-    <AbsoluteFill
-      style={{
-        transform: `scale(${inScale * outScale})`,
-        opacity,
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      {children}
-    </AbsoluteFill>
-  );
-};
+const sans = `${fontFamily}, Helvetica, Arial, sans-serif`;
 
-const Stack: React.FC<{gap: number; children: React.ReactNode; pad: number}> = ({
-  gap,
-  children,
-  pad,
-}) => (
-  <div
+const Centre: React.FC<{children: React.ReactNode; pad: number}> = ({children, pad}) => (
+  <AbsoluteFill
     style={{
-      display: 'flex',
-      flexDirection: 'column',
+      justifyContent: 'center',
       alignItems: 'center',
-      gap,
+      textAlign: 'center',
       paddingLeft: pad,
       paddingRight: pad,
-      textAlign: 'center',
     }}
   >
     {children}
-  </div>
+  </AbsoluteFill>
 );
 
 export const Promo: React.FC<{format: Format}> = ({format}) => {
@@ -70,268 +38,395 @@ export const Promo: React.FC<{format: Format}> = ({format}) => {
 
   return (
     <AbsoluteFill style={{backgroundColor: C.greenDeep}}>
-      <Backdrop />
-
       {HAS_MUSIC_FILE ? <Audio src={staticFile('music.mp3')} volume={0.9} /> : null}
 
-      {/* 1 — HOOK */}
-      <Sequence {...SCENES.hook}>
-        <Cut hold={SCENES.hook.durationInFrames}>
-          <Stack gap={44 * k} pad={pad}>
-            <CornerMark k={k} />
-            <Words
-              text="Ready for your next move?"
-              size={118 * k}
-              delay={6}
-              stagger={3}
-              maxWidth={maxTextWidth}
-            />
-            <Rule width={260 * k} delay={30} thickness={9 * k} />
-          </Stack>
-        </Cut>
+      <Sequence {...SCENES.open}>
+        <SceneOpen k={k} pad={pad} />
       </Sequence>
 
-      {/* 2 — WE'RE HIRING */}
       <Sequence {...SCENES.hiring}>
-        <Cut hold={SCENES.hiring.durationInFrames}>
-          <Stack gap={30 * k} pad={pad}>
-            <Words
-              text="We're"
-              size={132 * k}
-              color={C.white}
-              delay={2}
-              stagger={0}
-            />
-            <HiringSlam k={k} />
-          </Stack>
-        </Cut>
+        <SceneHiring k={k} pad={pad} portrait={portrait} />
       </Sequence>
 
-      {/* 3 — THE ROLE */}
       <Sequence {...SCENES.role}>
-        <Cut hold={SCENES.role.durationInFrames}>
-          <Stack gap={34 * k} pad={pad}>
-            <Kicker text="Now open" k={k} />
-            <Words
-              text="Senior Social Media Specialist"
-              size={(portrait ? 82 : 96) * k}
-              delay={8}
-              stagger={2}
-              maxWidth={maxTextWidth}
-            />
-            <Rule width={200 * k} delay={30} thickness={7 * k} />
-            <Words
-              text="& Creative Content Writer"
-              size={(portrait ? 82 : 96) * k}
-              color={C.greenBright}
-              delay={38}
-              stagger={2}
-              maxWidth={maxTextWidth}
-            />
-          </Stack>
-        </Cut>
+        <SceneRole k={k} pad={pad} maxTextWidth={maxTextWidth} portrait={portrait} />
       </Sequence>
 
-      {/* 4 — THE LINE */}
       <Sequence {...SCENES.line}>
-        <Cut hold={SCENES.line.durationInFrames}>
-          <Stack gap={36 * k} pad={pad}>
-            <Words
-              text="Turn ideas into impact."
-              size={104 * k}
-              delay={4}
-              stagger={3}
-              maxWidth={maxTextWidth}
-            />
-            <Words
-              text="Join Rotana Music."
-              size={104 * k}
-              color={C.greenBright}
-              delay={30}
-              stagger={3}
-              maxWidth={maxTextWidth}
-            />
-          </Stack>
-        </Cut>
+        <SceneLine k={k} pad={pad} maxTextWidth={maxTextWidth} />
       </Sequence>
 
-      {/* 5 — CTA */}
       <Sequence {...SCENES.cta}>
-        <CtaScene k={k} pad={pad} hold={SCENES.cta.durationInFrames} />
+        <SceneCta k={k} pad={pad} portrait={portrait} />
       </Sequence>
+
+      {/* Swoosh curtains ride on top and hide every cut. */}
+      {WIPES.map((w) => (
+        <Sequence key={w.from} from={w.from} durationInFrames={w.durationInFrames}>
+          <SwooshWipe color={w.color} duration={w.durationInFrames} />
+        </Sequence>
+      ))}
     </AbsoluteFill>
   );
 };
 
-/** Small orb + wordmark lockup that sits above the hook line. */
-const CornerMark: React.FC<{k: number}> = ({k}) => {
+/* ------------------------------------------------------------------ */
+/* 1 — Logo reveal, then the hook                                      */
+/* ------------------------------------------------------------------ */
+const SceneOpen: React.FC<{k: number; pad: number}> = ({k, pad}) => {
   const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
-  const p = spring({frame, fps, config: {damping: 200}, durationInFrames: 22});
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 22 * k,
-        opacity: p,
-        transform: `translateY(${(1 - p) * 26}px)`,
-      }}
-    >
-      <Logo size={74 * k} />
-      <div
-        style={{
-          fontFamily: `${fontFamily}, Helvetica, Arial, sans-serif`,
-          fontWeight: 800,
-          fontSize: 34 * k,
-          letterSpacing: '0.30em',
-          color: C.cream,
-          textTransform: 'uppercase',
-        }}
-      >
-        Rotana Music
-      </div>
-    </div>
-  );
-};
+  const {fps, height} = useVideoConfig();
 
-const Kicker: React.FC<{text: string; k: number}> = ({text, k}) => {
-  const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
-  const p = spring({frame, fps, config: {damping: 200}, durationInFrames: 18});
-  return (
-    <div
-      style={{
-        fontFamily: `${fontFamily}, Helvetica, Arial, sans-serif`,
-        fontWeight: 800,
-        fontSize: 30 * k,
-        letterSpacing: '0.36em',
-        color: C.greenBright,
-        textTransform: 'uppercase',
-        opacity: p,
-        transform: `translateY(${(1 - p) * 18}px)`,
-      }}
-    >
-      {text}
-    </div>
-  );
-};
-
-/** "HIRING!" lands hard on a cream band. */
-const HiringSlam: React.FC<{k: number}> = ({k}) => {
-  const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
-  const p = spring({
-    frame: frame - 10,
-    fps,
-    config: {damping: 14, mass: 0.9, stiffness: 180},
-    durationInFrames: 30,
+  const pop = spring({frame, fps, config: {damping: 12, mass: 0.7}, durationInFrames: 26});
+  // The swoosh paints on after the sphere has landed.
+  const draw = interpolate(frame, [14, 34], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.bezier(0.6, 0, 0.2, 1),
   });
-  const scale = interpolate(p, [0, 1], [1.5, 1]);
+  // Then the mark travels up and shrinks to make room for the headline.
+  const travel = interpolate(frame, [40, 58], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.bezier(0.65, 0, 0.25, 1),
+  });
+  const orbSize = interpolate(travel, [0, 1], [330 * k, 112 * k]);
+  const orbY = interpolate(travel, [0, 1], [0, -height * 0.2]);
+
   return (
-    <div
-      style={{
-        transform: `scale(${scale})`,
-        opacity: interpolate(frame, [10, 14], [0, 1], {
-          extrapolateLeft: 'clamp',
-          extrapolateRight: 'clamp',
-        }),
-        backgroundColor: C.cream,
-        padding: `${16 * k}px ${46 * k}px ${24 * k}px`,
-        borderRadius: 14 * k,
-      }}
-    >
-      <div
-        style={{
-          fontFamily: `${fontFamily}, Helvetica, Arial, sans-serif`,
-          fontWeight: 900,
-          fontSize: 184 * k,
-          lineHeight: 1,
-          letterSpacing: '-0.03em',
-          color: C.greenDark,
-          textTransform: 'uppercase',
-        }}
-      >
-        Hiring!
-      </div>
-    </div>
+    <AbsoluteFill>
+      <Backdrop />
+      <OrbField count={6} />
+
+      <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
+        <div style={{transform: `translateY(${orbY}px) scale(${pop})`}}>
+          <Logo size={orbSize} draw={draw} />
+        </div>
+      </AbsoluteFill>
+
+      <Centre pad={pad}>
+        <div style={{marginTop: height * 0.08}}>
+          <Words
+            text="Ready for your next move?"
+            size={112 * k}
+            delay={52}
+            stagger={3}
+            maxWidth={1400}
+          />
+        </div>
+      </Centre>
+    </AbsoluteFill>
   );
 };
 
-const CtaScene: React.FC<{k: number; pad: number; hold: number}> = ({k, pad, hold}) => {
+/* ------------------------------------------------------------------ */
+/* 2 — Contrast cut: cream frame, green type                           */
+/* ------------------------------------------------------------------ */
+const SceneHiring: React.FC<{k: number; pad: number; portrait: boolean}> = ({
+  k,
+  pad,
+  portrait,
+}) => {
   const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
-  const orb = spring({frame, fps, config: {damping: 200}, durationInFrames: 26});
-  const btn = spring({frame: frame - 26, fps, config: {damping: 14, mass: 0.7}, durationInFrames: 24});
-  const pulse = 1 + Math.sin(Math.max(0, frame - 50) * 0.22) * 0.018;
-  const fade = interpolate(frame, [0, 4, hold - 8, hold], [0, 1, 1, 0], {
+  const {width, height} = useVideoConfig();
+
+  return (
+    <AbsoluteFill style={{backgroundColor: C.cream, overflow: 'hidden'}}>
+      {/* Ghosted orb for texture on the light frame. Sized off the SHORT edge
+          so it stays contained in portrait as well as landscape. */}
+      <AbsoluteFill style={{alignItems: 'center', justifyContent: 'center'}}>
+        <div style={{opacity: 0.075}}>
+          <Logo size={Math.min(width, height) * 0.86} />
+        </div>
+      </AbsoluteFill>
+
+      <Ticker
+        text="WE'RE HIRING"
+        y={height * (portrait ? 0.18 : 0.1)}
+        size={46 * k}
+        angle={-3}
+        speed={4.2}
+      />
+      <Ticker
+        text="APPLY NOW"
+        y={height * (portrait ? 0.73 : 0.79)}
+        size={46 * k}
+        angle={2.6}
+        speed={-3.6}
+        bg={C.greenDeep}
+        fg={C.cream}
+      />
+
+      <Centre pad={pad}>
+        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+          <MaskReveal delay={4} duration={14}>
+            <div
+              style={{
+                fontFamily: sans,
+                fontWeight: 900,
+                fontSize: 92 * k,
+                letterSpacing: '0.02em',
+                color: C.green,
+                textTransform: 'uppercase',
+                lineHeight: 1,
+              }}
+            >
+              We're
+            </div>
+          </MaskReveal>
+
+          <Slam delay={14}>
+            <div
+              style={{
+                fontFamily: sans,
+                fontWeight: 900,
+                fontSize: (portrait ? 180 : 226) * k,
+                lineHeight: 1,
+                letterSpacing: '-0.045em',
+                color: C.greenDeep,
+                textTransform: 'uppercase',
+              }}
+            >
+              Hiring!
+            </div>
+          </Slam>
+        </div>
+      </Centre>
+
+      {/* Impact flash on the slam. */}
+      <AbsoluteFill
+        style={{
+          backgroundColor: C.white,
+          opacity: interpolate(frame, [14, 17, 24], [0, 0.5, 0], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+          }),
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* 3 — The role                                                        */
+/* ------------------------------------------------------------------ */
+const SceneRole: React.FC<{
+  k: number;
+  pad: number;
+  maxTextWidth: number;
+  portrait: boolean;
+}> = ({k, pad, maxTextWidth, portrait}) => {
+  const size = (portrait ? 78 : 92) * k;
+
+  return (
+    <AbsoluteFill>
+      <Backdrop />
+      <OrbField count={8} />
+
+      <Centre pad={pad}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 26 * k,
+            maxWidth: maxTextWidth,
+          }}
+        >
+          <MaskReveal delay={2} duration={12}>
+            <div
+              style={{
+                fontFamily: sans,
+                fontWeight: 800,
+                fontSize: 26 * k,
+                letterSpacing: '0.42em',
+                color: C.greenBright,
+                textTransform: 'uppercase',
+                border: `${2 * k}px solid ${C.greenBright}`,
+                borderRadius: 999,
+                padding: `${12 * k}px ${16 * k}px ${12 * k}px ${30 * k}px`,
+              }}
+            >
+              Now open
+            </div>
+          </MaskReveal>
+
+          <MaskReveal delay={14} duration={18}>
+            <div
+              style={{
+                fontFamily: sans,
+                fontWeight: 900,
+                fontSize: size,
+                lineHeight: 1.04,
+                letterSpacing: '-0.025em',
+                color: C.cream,
+                textTransform: 'uppercase',
+              }}
+            >
+              Senior Social Media
+              <br />
+              Specialist
+            </div>
+          </MaskReveal>
+
+          <MaskReveal delay={40} duration={18}>
+            <div
+              style={{
+                fontFamily: sans,
+                fontWeight: 900,
+                fontSize: size,
+                lineHeight: 1.04,
+                letterSpacing: '-0.025em',
+                color: C.greenBright,
+                textTransform: 'uppercase',
+              }}
+            >
+              &amp; Creative
+              <br />
+              Content Writer
+            </div>
+          </MaskReveal>
+        </div>
+      </Centre>
+    </AbsoluteFill>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* 4 — The line                                                        */
+/* ------------------------------------------------------------------ */
+const SceneLine: React.FC<{k: number; pad: number; maxTextWidth: number}> = ({
+  k,
+  pad,
+  maxTextWidth,
+}) => (
+  <AbsoluteFill>
+    <Backdrop />
+    <OrbField count={5} />
+    <Centre pad={pad}>
+      <div
+        style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22 * k}}
+      >
+        <Words
+          text="Turn ideas into impact."
+          size={102 * k}
+          delay={3}
+          stagger={3}
+          maxWidth={maxTextWidth}
+        />
+        <Words
+          text="Join Rotana Music."
+          size={102 * k}
+          color={C.greenBright}
+          delay={26}
+          stagger={3}
+          maxWidth={maxTextWidth}
+        />
+      </div>
+    </Centre>
+  </AbsoluteFill>
+);
+
+/* ------------------------------------------------------------------ */
+/* 5 — CTA                                                             */
+/* ------------------------------------------------------------------ */
+const SceneCta: React.FC<{k: number; pad: number; portrait: boolean}> = ({
+  k,
+  pad,
+  portrait,
+}) => {
+  const frame = useCurrentFrame();
+  const {fps, height} = useVideoConfig();
+
+  const orb = spring({frame, fps, config: {damping: 13, mass: 0.7}, durationInFrames: 26});
+  const btn = spring({
+    frame: frame - 24,
+    fps,
+    config: {damping: 12, mass: 0.6},
+    durationInFrames: 24,
+  });
+  const pulse = 1 + Math.sin(Math.max(0, frame - 46) * 0.24) * 0.022;
+  const draw = interpolate(frame, [4, 22], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
 
   return (
-    <AbsoluteFill
-      style={{justifyContent: 'center', alignItems: 'center', opacity: fade}}
-    >
-      <Stack gap={40 * k} pad={pad}>
-        <div style={{transform: `scale(${orb})`, opacity: orb}}>
-          <Logo size={230 * k} />
-        </div>
+    <AbsoluteFill>
+      <Backdrop />
+      <OrbField count={5} />
 
-        <div
-          style={{
-            fontFamily: `${fontFamily}, Helvetica, Arial, sans-serif`,
-            fontWeight: 800,
-            fontSize: 38 * k,
-            letterSpacing: '0.32em',
-            color: C.cream,
-            textTransform: 'uppercase',
-            opacity: orb,
-          }}
-        >
-          Rotana Music
-        </div>
+      <Ticker
+        text="APPLY NOW"
+        y={height * (portrait ? 0.87 : 0.88)}
+        size={38 * k}
+        angle={-2}
+        speed={4}
+      />
 
+      <Centre pad={pad}>
         <div
-          style={{
-            transform: `scale(${btn * pulse})`,
-            opacity: btn,
-            backgroundColor: C.greenBright,
-            padding: `${22 * k}px ${64 * k}px`,
-            borderRadius: 999,
-          }}
+          style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32 * k}}
         >
+          <div style={{transform: `scale(${orb})`}}>
+            <Logo size={190 * k} draw={draw} />
+          </div>
+
+          <MaskReveal delay={18} duration={14}>
+            <div
+              style={{
+                fontFamily: sans,
+                fontWeight: 800,
+                fontSize: 34 * k,
+                letterSpacing: '0.34em',
+                color: C.cream,
+                textTransform: 'uppercase',
+                paddingLeft: '0.34em',
+              }}
+            >
+              Rotana Music
+            </div>
+          </MaskReveal>
+
           <div
             style={{
-              fontFamily: `${fontFamily}, Helvetica, Arial, sans-serif`,
-              fontWeight: 900,
-              fontSize: 60 * k,
-              letterSpacing: '0.04em',
-              color: C.greenDeep,
-              textTransform: 'uppercase',
+              transform: `scale(${btn * pulse})`,
+              backgroundColor: C.greenBright,
+              padding: `${20 * k}px ${62 * k}px`,
+              borderRadius: 999,
+              boxShadow: `0 ${18 * k}px ${44 * k}px rgba(25,168,92,0.34)`,
             }}
           >
-            Apply now
+            <div
+              style={{
+                fontFamily: sans,
+                fontWeight: 900,
+                fontSize: 56 * k,
+                letterSpacing: '0.03em',
+                color: C.greenDeep,
+                textTransform: 'uppercase',
+              }}
+            >
+              Apply now
+            </div>
           </div>
-        </div>
 
-        <div
-          style={{
-            fontFamily: `${fontFamily}, Helvetica, Arial, sans-serif`,
-            fontWeight: 700,
-            fontSize: 38 * k,
-            letterSpacing: '0.12em',
-            color: C.cream,
-            textTransform: 'uppercase',
-            opacity: interpolate(frame, [40, 52], [0, 1], {
-              extrapolateLeft: 'clamp',
-              extrapolateRight: 'clamp',
-            }),
-          }}
-        >
-          rotanamusic.com/careers
+          <MaskReveal delay={44} duration={14}>
+            <div
+              style={{
+                fontFamily: sans,
+                fontWeight: 700,
+                fontSize: 34 * k,
+                letterSpacing: '0.1em',
+                color: C.cream,
+                textTransform: 'uppercase',
+              }}
+            >
+              rotanamusic.com/careers
+            </div>
+          </MaskReveal>
         </div>
-      </Stack>
+      </Centre>
     </AbsoluteFill>
   );
 };

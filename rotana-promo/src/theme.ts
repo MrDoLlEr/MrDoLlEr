@@ -15,12 +15,21 @@ export const DURATION_FRAMES = 420; // 14s
 
 // Scene boundaries in frames. Kept here so both formats stay in lockstep.
 export const SCENES = {
-  hook: { from: 0, durationInFrames: 78 },
-  hiring: { from: 78, durationInFrames: 72 },
-  role: { from: 150, durationInFrames: 108 },
-  line: { from: 258, durationInFrames: 78 },
-  cta: { from: 336, durationInFrames: 84 },
+  open: { from: 0, durationInFrames: 100 },
+  hiring: { from: 100, durationInFrames: 68 },
+  role: { from: 168, durationInFrames: 110 },
+  line: { from: 278, durationInFrames: 64 },
+  cta: { from: 342, durationInFrames: 78 },
 } as const;
+
+// A swoosh curtain straddles every cut so the change happens behind it.
+// `from` is set ~8 frames before the boundary; the curtain covers at midpoint.
+export const WIPES = [
+  { from: 92, durationInFrames: 17, color: C.cream },
+  { from: 160, durationInFrames: 17, color: C.greenBright },
+  { from: 270, durationInFrames: 17, color: C.cream },
+  { from: 334, durationInFrames: 17, color: C.greenBright },
+] as const;
 
 export type Format = 'linkedin' | 'web';
 
