@@ -1,0 +1,21 @@
+{
+  "job_handle": "",
+  "submitted_at": "",
+  "model": "gpt-image-2",
+  "prompt_file": "prompts/image-2-creature-design.txt",
+  "settings": {
+    "aspect_ratio": "9:16",
+    "duration_seconds": null,
+    "resolution": "1080p",
+    "generate_audio": false,
+    "start_frame": "",
+    "reference_images": [
+      "images/macro-setup.png"
+    ]
+  },
+  "output_path": "",
+  "status": "not_submitted",
+  "review_outcome": "",
+  "review_note": "",
+  "cost": null
+}
