@@ -1,47 +1,47 @@
 import React from 'react';
-import {AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, random} from 'remotion';
+import {AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate} from 'remotion';
 import {C} from './theme';
 
 /**
- * Deep-green stage with a music-driven equaliser motif and a light sweep.
- * Runs for the whole piece so cuts feel like one continuous world.
+ * Deep-green stage. Deliberately matte: no light sweeps, no specular glare —
+ * just a slow gradient drift, a faint dot grid and a soft equaliser bed, so
+ * type always sits on a calm surface.
  */
 export const Backdrop: React.FC = () => {
   const frame = useCurrentFrame();
   const {width, height, durationInFrames} = useVideoConfig();
 
-  const barCount = 34;
+  const barCount = 30;
   const barWidth = width / barCount;
-
-  // Slow ambient drift on the base gradient.
-  const drift = interpolate(frame, [0, durationInFrames], [0, 14]);
-
-  // Light sweep crossing the frame on every scene change.
-  const sweepX = interpolate(
-    frame % 78,
-    [0, 26],
-    [-width * 0.7, width * 1.4],
-    {extrapolateRight: 'clamp'}
-  );
+  const drift = interpolate(frame, [0, durationInFrames], [0, 10]);
 
   return (
     <AbsoluteFill style={{backgroundColor: C.greenDeep, overflow: 'hidden'}}>
       <AbsoluteFill
         style={{
-          background: `radial-gradient(120% 90% at ${28 + drift}% ${18 + drift * 0.4}%, ${C.greenMid} 0%, ${C.greenDark} 42%, ${C.greenDeep} 100%)`,
+          background: `radial-gradient(125% 95% at ${30 + drift}% ${20 + drift * 0.3}%, ${C.greenMid} 0%, ${C.greenDark} 45%, ${C.greenDeep} 100%)`,
         }}
       />
 
-      {/* Equaliser bars along the bottom — the music cue. */}
+      {/* Fine dot grid — texture without noise. */}
+      <AbsoluteFill
+        style={{
+          backgroundImage: `radial-gradient(rgba(244,241,230,0.10) 1.5px, transparent 1.5px)`,
+          backgroundSize: `${width / 42}px ${width / 42}px`,
+          opacity: 0.5,
+        }}
+      />
+
+      {/* Equaliser bed along the bottom — the music cue, kept very low. */}
       <AbsoluteFill style={{justifyContent: 'flex-end'}}>
-        <div style={{display: 'flex', alignItems: 'flex-end', height: height * 0.42}}>
+        <div style={{display: 'flex', alignItems: 'flex-end', height: height * 0.34}}>
           {new Array(barCount).fill(0).map((_, i) => {
-            const seed = random(`bar-${i}`);
-            const speed = 0.16 + seed * 0.22;
+            const seed = (i * 37) % 11 / 11;
+            const speed = 0.10 + seed * 0.10;
             const h =
-              (0.12 + 0.88 * Math.abs(Math.sin(frame * speed + seed * 12))) *
+              (0.25 + 0.75 * Math.abs(Math.sin(frame * speed + seed * 9))) *
               height *
-              (0.10 + seed * 0.30);
+              (0.08 + seed * 0.2);
             return (
               <div
                 key={i}
@@ -49,7 +49,7 @@ export const Backdrop: React.FC = () => {
                   width: barWidth,
                   height: h,
                   background: `linear-gradient(to top, ${C.greenBright}, transparent)`,
-                  opacity: 0.16,
+                  opacity: 0.12,
                 }}
               />
             );
@@ -57,27 +57,12 @@ export const Backdrop: React.FC = () => {
         </div>
       </AbsoluteFill>
 
-      {/* Vignette keeps type legible over the bars. */}
+      {/* Vignette keeps the centre readable. */}
       <AbsoluteFill
         style={{
-          background: `radial-gradient(85% 70% at 50% 45%, transparent 0%, rgba(2,41,26,0.72) 100%)`,
+          background: `radial-gradient(88% 74% at 50% 46%, transparent 0%, rgba(2,41,26,0.70) 100%)`,
         }}
       />
-
-      {/* Fast light sweep. */}
-      <AbsoluteFill style={{overflow: 'hidden'}}>
-        <div
-          style={{
-            position: 'absolute',
-            top: -height * 0.3,
-            left: sweepX,
-            width: width * 0.22,
-            height: height * 1.6,
-            transform: 'rotate(14deg)',
-            background: `linear-gradient(90deg, transparent, rgba(244,241,230,0.10), transparent)`,
-          }}
-        />
-      </AbsoluteFill>
     </AbsoluteFill>
   );
 };

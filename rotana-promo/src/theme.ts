@@ -15,20 +15,22 @@ export const DURATION_FRAMES = 420; // 14s
 
 // Scene boundaries in frames. Kept here so both formats stay in lockstep.
 export const SCENES = {
-  open: { from: 0, durationInFrames: 100 },
-  hiring: { from: 100, durationInFrames: 68 },
-  role: { from: 168, durationInFrames: 110 },
-  line: { from: 278, durationInFrames: 64 },
-  cta: { from: 342, durationInFrames: 78 },
+  open: { from: 0, durationInFrames: 104 },
+  hiring: { from: 104, durationInFrames: 72 },
+  role: { from: 176, durationInFrames: 112 },
+  line: { from: 288, durationInFrames: 64 },
+  cta: { from: 352, durationInFrames: 68 },
 } as const;
 
 // A swoosh curtain straddles every cut so the change happens behind it.
-// `from` is set ~8 frames before the boundary; the curtain covers at midpoint.
+// 26 frames (~0.87s) — slow enough that the swoosh silhouette reads as the
+// brand mark on its way past, rather than flicking by.
+const WIPE_LEN = 26;
 export const WIPES = [
-  { from: 92, durationInFrames: 17, color: C.cream },
-  { from: 160, durationInFrames: 17, color: C.greenBright },
-  { from: 270, durationInFrames: 17, color: C.cream },
-  { from: 334, durationInFrames: 17, color: C.greenBright },
+  { from: 104 - WIPE_LEN / 2, durationInFrames: WIPE_LEN, color: C.cream },
+  { from: 176 - WIPE_LEN / 2, durationInFrames: WIPE_LEN, color: C.greenBright },
+  { from: 288 - WIPE_LEN / 2, durationInFrames: WIPE_LEN, color: C.cream },
+  { from: 352 - WIPE_LEN / 2, durationInFrames: WIPE_LEN, color: C.greenBright },
 ] as const;
 
 export type Format = 'linkedin' | 'web';

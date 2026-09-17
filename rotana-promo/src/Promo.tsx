@@ -12,9 +12,19 @@ import {
 } from 'remotion';
 import {C, SCENES, WIPES, layout, Format} from './theme';
 import {Backdrop} from './Backdrop';
-import {Words, fontFamily} from './Type';
+import {fontFamily} from './Type';
 import {Logo} from './Logo';
-import {SwooshWipe, OrbField, Ticker, MaskReveal, Slam} from './Motion';
+import {
+  SwooshWipe,
+  OrbField,
+  Ticker,
+  MaskReveal,
+  Typewriter,
+  Slam,
+  CornerFrame,
+  Chips,
+  ProgressRail,
+} from './Motion';
 import {HAS_MUSIC_FILE} from './logoFlag';
 
 const sans = `${fontFamily}, Helvetica, Arial, sans-serif`;
@@ -35,6 +45,7 @@ const Centre: React.FC<{children: React.ReactNode; pad: number}> = ({children, p
 
 export const Promo: React.FC<{format: Format}> = ({format}) => {
   const {k, pad, maxTextWidth, portrait} = layout(format);
+  const {height} = useVideoConfig();
 
   return (
     <AbsoluteFill style={{backgroundColor: C.greenDeep}}>
@@ -66,37 +77,39 @@ export const Promo: React.FC<{format: Format}> = ({format}) => {
           <SwooshWipe color={w.color} duration={w.durationInFrames} />
         </Sequence>
       ))}
+
+      {/* Runs the whole length, above the wipes. */}
+      <ProgressRail y={height - 34 * k} inset={pad * 0.7} />
     </AbsoluteFill>
   );
 };
 
 /* ------------------------------------------------------------------ */
-/* 1 — Logo reveal, then the hook                                      */
+/* 1 — Logo reveal, then the hook (typed on)                           */
 /* ------------------------------------------------------------------ */
 const SceneOpen: React.FC<{k: number; pad: number}> = ({k, pad}) => {
   const frame = useCurrentFrame();
   const {fps, height} = useVideoConfig();
 
-  const pop = spring({frame, fps, config: {damping: 12, mass: 0.7}, durationInFrames: 26});
-  // The swoosh paints on after the sphere has landed.
-  const draw = interpolate(frame, [14, 34], [0, 1], {
+  const pop = spring({frame, fps, config: {damping: 14, mass: 0.8}, durationInFrames: 30});
+  const draw = interpolate(frame, [16, 40], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
     easing: Easing.bezier(0.6, 0, 0.2, 1),
   });
-  // Then the mark travels up and shrinks to make room for the headline.
-  const travel = interpolate(frame, [40, 58], [0, 1], {
+  const travel = interpolate(frame, [44, 64], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
     easing: Easing.bezier(0.65, 0, 0.25, 1),
   });
-  const orbSize = interpolate(travel, [0, 1], [330 * k, 112 * k]);
-  const orbY = interpolate(travel, [0, 1], [0, -height * 0.2]);
+  const orbSize = interpolate(travel, [0, 1], [320 * k, 118 * k]);
+  const orbY = interpolate(travel, [0, 1], [0, -height * 0.21]);
 
   return (
     <AbsoluteFill>
       <Backdrop />
       <OrbField count={6} />
+      <CornerFrame inset={pad * 0.55} delay={62} />
 
       <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
         <div style={{transform: `translateY(${orbY}px) scale(${pop})`}}>
@@ -105,13 +118,21 @@ const SceneOpen: React.FC<{k: number; pad: number}> = ({k, pad}) => {
       </AbsoluteFill>
 
       <Centre pad={pad}>
-        <div style={{marginTop: height * 0.08}}>
-          <Words
+        <div style={{marginTop: height * 0.09}}>
+          <Typewriter
             text="Ready for your next move?"
-            size={112 * k}
-            delay={52}
-            stagger={3}
-            maxWidth={1400}
+            delay={58}
+            cps={21}
+            style={{
+              fontFamily: sans,
+              fontWeight: 900,
+              fontSize: 104 * k,
+              lineHeight: 1.06,
+              letterSpacing: '-0.02em',
+              color: C.cream,
+              textTransform: 'uppercase',
+              maxWidth: 1400,
+            }}
           />
         </div>
       </Centre>
@@ -120,20 +141,18 @@ const SceneOpen: React.FC<{k: number; pad: number}> = ({k, pad}) => {
 };
 
 /* ------------------------------------------------------------------ */
-/* 2 — Contrast cut: cream frame, green type                           */
+/* 2 — Contrast cut: cream frame, green type. No flash.                */
 /* ------------------------------------------------------------------ */
 const SceneHiring: React.FC<{k: number; pad: number; portrait: boolean}> = ({
   k,
   pad,
   portrait,
 }) => {
-  const frame = useCurrentFrame();
   const {width, height} = useVideoConfig();
 
   return (
     <AbsoluteFill style={{backgroundColor: C.cream, overflow: 'hidden'}}>
-      {/* Ghosted orb for texture on the light frame. Sized off the SHORT edge
-          so it stays contained in portrait as well as landscape. */}
+      {/* Ghosted orb for texture, sized off the short edge. */}
       <AbsoluteFill style={{alignItems: 'center', justifyContent: 'center'}}>
         <div style={{opacity: 0.075}}>
           <Logo size={Math.min(width, height) * 0.86} />
@@ -143,28 +162,28 @@ const SceneHiring: React.FC<{k: number; pad: number; portrait: boolean}> = ({
       <Ticker
         text="WE'RE HIRING"
         y={height * (portrait ? 0.18 : 0.1)}
-        size={46 * k}
+        size={44 * k}
         angle={-3}
-        speed={4.2}
+        speed={3.4}
       />
       <Ticker
         text="APPLY NOW"
         y={height * (portrait ? 0.73 : 0.79)}
-        size={46 * k}
+        size={44 * k}
         angle={2.6}
-        speed={-3.6}
+        speed={-3}
         bg={C.greenDeep}
         fg={C.cream}
       />
 
       <Centre pad={pad}>
         <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-          <MaskReveal delay={4} duration={14}>
+          <MaskReveal delay={6} duration={16}>
             <div
               style={{
                 fontFamily: sans,
                 fontWeight: 900,
-                fontSize: 92 * k,
+                fontSize: 90 * k,
                 letterSpacing: '0.02em',
                 color: C.green,
                 textTransform: 'uppercase',
@@ -175,12 +194,12 @@ const SceneHiring: React.FC<{k: number; pad: number; portrait: boolean}> = ({
             </div>
           </MaskReveal>
 
-          <Slam delay={14}>
+          <Slam delay={18}>
             <div
               style={{
                 fontFamily: sans,
                 fontWeight: 900,
-                fontSize: (portrait ? 180 : 226) * k,
+                fontSize: (portrait ? 178 : 222) * k,
                 lineHeight: 1,
                 letterSpacing: '-0.045em',
                 color: C.greenDeep,
@@ -192,23 +211,12 @@ const SceneHiring: React.FC<{k: number; pad: number; portrait: boolean}> = ({
           </Slam>
         </div>
       </Centre>
-
-      {/* Impact flash on the slam. */}
-      <AbsoluteFill
-        style={{
-          backgroundColor: C.white,
-          opacity: interpolate(frame, [14, 17, 24], [0, 0.5, 0], {
-            extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp',
-          }),
-        }}
-      />
     </AbsoluteFill>
   );
 };
 
 /* ------------------------------------------------------------------ */
-/* 3 — The role                                                        */
+/* 3 — The role, typed on, with discipline chips                       */
 /* ------------------------------------------------------------------ */
 const SceneRole: React.FC<{
   k: number;
@@ -216,12 +224,13 @@ const SceneRole: React.FC<{
   maxTextWidth: number;
   portrait: boolean;
 }> = ({k, pad, maxTextWidth, portrait}) => {
-  const size = (portrait ? 78 : 92) * k;
+  const size = (portrait ? 76 : 90) * k;
 
   return (
     <AbsoluteFill>
       <Backdrop />
       <OrbField count={8} />
+      <CornerFrame inset={pad * 0.55} delay={4} />
 
       <Centre pad={pad}>
         <div
@@ -233,7 +242,7 @@ const SceneRole: React.FC<{
             maxWidth: maxTextWidth,
           }}
         >
-          <MaskReveal delay={2} duration={12}>
+          <MaskReveal delay={2} duration={14}>
             <div
               style={{
                 fontFamily: sans,
@@ -251,41 +260,44 @@ const SceneRole: React.FC<{
             </div>
           </MaskReveal>
 
-          <MaskReveal delay={14} duration={18}>
-            <div
-              style={{
-                fontFamily: sans,
-                fontWeight: 900,
-                fontSize: size,
-                lineHeight: 1.04,
-                letterSpacing: '-0.025em',
-                color: C.cream,
-                textTransform: 'uppercase',
-              }}
-            >
-              Senior Social Media
-              <br />
-              Specialist
-            </div>
-          </MaskReveal>
+          <Typewriter
+            text={'Senior Social Media\nSpecialist'}
+            delay={14}
+            cps={30}
+            caret={false}
+            style={{
+              fontFamily: sans,
+              fontWeight: 900,
+              fontSize: size,
+              lineHeight: 1.06,
+              letterSpacing: '-0.025em',
+              color: C.cream,
+              textTransform: 'uppercase',
+            }}
+          />
 
-          <MaskReveal delay={40} duration={18}>
-            <div
-              style={{
-                fontFamily: sans,
-                fontWeight: 900,
-                fontSize: size,
-                lineHeight: 1.04,
-                letterSpacing: '-0.025em',
-                color: C.greenBright,
-                textTransform: 'uppercase',
-              }}
-            >
-              &amp; Creative
-              <br />
-              Content Writer
-            </div>
-          </MaskReveal>
+          <Typewriter
+            text={'& Creative\nContent Writer'}
+            delay={46}
+            cps={30}
+            style={{
+              fontFamily: sans,
+              fontWeight: 900,
+              fontSize: size,
+              lineHeight: 1.06,
+              letterSpacing: '-0.025em',
+              color: C.greenBright,
+              textTransform: 'uppercase',
+            }}
+          />
+
+          <div style={{marginTop: 10 * k}}>
+            <Chips
+              items={['Strategy', 'Copy', 'Campaigns']}
+              size={22 * k}
+              delay={76}
+            />
+          </div>
         </div>
       </Centre>
     </AbsoluteFill>
@@ -303,25 +315,50 @@ const SceneLine: React.FC<{k: number; pad: number; maxTextWidth: number}> = ({
   <AbsoluteFill>
     <Backdrop />
     <OrbField count={5} />
+
     <Centre pad={pad}>
       <div
-        style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22 * k}}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 18 * k,
+          maxWidth: maxTextWidth,
+        }}
       >
-        <Words
-          text="Turn ideas into impact."
-          size={102 * k}
-          delay={3}
-          stagger={3}
-          maxWidth={maxTextWidth}
-        />
-        <Words
-          text="Join Rotana Music."
-          size={102 * k}
-          color={C.greenBright}
-          delay={26}
-          stagger={3}
-          maxWidth={maxTextWidth}
-        />
+        <MaskReveal delay={2} duration={20}>
+          <div
+            style={{
+              fontFamily: sans,
+              fontWeight: 900,
+              fontSize: 98 * k,
+              lineHeight: 1.06,
+              letterSpacing: '-0.025em',
+              color: C.cream,
+              textTransform: 'uppercase',
+            }}
+          >
+            Turn ideas
+            <br />
+            into impact.
+          </div>
+        </MaskReveal>
+
+        <MaskReveal delay={26} duration={20}>
+          <div
+            style={{
+              fontFamily: sans,
+              fontWeight: 900,
+              fontSize: 98 * k,
+              lineHeight: 1.06,
+              letterSpacing: '-0.025em',
+              color: C.greenBright,
+              textTransform: 'uppercase',
+            }}
+          >
+            Join Rotana Music.
+          </div>
+        </MaskReveal>
       </div>
     </Centre>
   </AbsoluteFill>
@@ -338,15 +375,15 @@ const SceneCta: React.FC<{k: number; pad: number; portrait: boolean}> = ({
   const frame = useCurrentFrame();
   const {fps, height} = useVideoConfig();
 
-  const orb = spring({frame, fps, config: {damping: 13, mass: 0.7}, durationInFrames: 26});
+  const orb = spring({frame, fps, config: {damping: 15, mass: 0.8}, durationInFrames: 30});
   const btn = spring({
-    frame: frame - 24,
+    frame: frame - 22,
     fps,
-    config: {damping: 12, mass: 0.6},
-    durationInFrames: 24,
+    config: {damping: 14, mass: 0.7},
+    durationInFrames: 26,
   });
-  const pulse = 1 + Math.sin(Math.max(0, frame - 46) * 0.24) * 0.022;
-  const draw = interpolate(frame, [4, 22], [0, 1], {
+  const pulse = 1 + Math.sin(Math.max(0, frame - 44) * 0.2) * 0.018;
+  const draw = interpolate(frame, [6, 26], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
@@ -355,24 +392,25 @@ const SceneCta: React.FC<{k: number; pad: number; portrait: boolean}> = ({
     <AbsoluteFill>
       <Backdrop />
       <OrbField count={5} />
+      <CornerFrame inset={pad * 0.55} delay={2} />
 
       <Ticker
         text="APPLY NOW"
-        y={height * (portrait ? 0.87 : 0.88)}
-        size={38 * k}
+        y={height * (portrait ? 0.86 : 0.86)}
+        size={36 * k}
         angle={-2}
-        speed={4}
+        speed={3.2}
       />
 
       <Centre pad={pad}>
         <div
-          style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32 * k}}
+          style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 30 * k}}
         >
           <div style={{transform: `scale(${orb})`}}>
-            <Logo size={190 * k} draw={draw} />
+            <Logo size={188 * k} draw={draw} />
           </div>
 
-          <MaskReveal delay={18} duration={14}>
+          <MaskReveal delay={16} duration={16}>
             <div
               style={{
                 fontFamily: sans,
@@ -394,7 +432,6 @@ const SceneCta: React.FC<{k: number; pad: number; portrait: boolean}> = ({
               backgroundColor: C.greenBright,
               padding: `${20 * k}px ${62 * k}px`,
               borderRadius: 999,
-              boxShadow: `0 ${18 * k}px ${44 * k}px rgba(25,168,92,0.34)`,
             }}
           >
             <div
@@ -411,20 +448,19 @@ const SceneCta: React.FC<{k: number; pad: number; portrait: boolean}> = ({
             </div>
           </div>
 
-          <MaskReveal delay={44} duration={14}>
-            <div
-              style={{
-                fontFamily: sans,
-                fontWeight: 700,
-                fontSize: 34 * k,
-                letterSpacing: '0.1em',
-                color: C.cream,
-                textTransform: 'uppercase',
-              }}
-            >
-              rotanamusic.com/careers
-            </div>
-          </MaskReveal>
+          <Typewriter
+            text="rotanamusic.com/careers"
+            delay={36}
+            cps={42}
+            style={{
+              fontFamily: sans,
+              fontWeight: 700,
+              fontSize: 34 * k,
+              letterSpacing: '0.1em',
+              color: C.cream,
+              textTransform: 'uppercase',
+            }}
+          />
         </div>
       </Centre>
     </AbsoluteFill>
