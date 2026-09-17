@@ -1,0 +1,19 @@
+{
+  "job_handle": "",
+  "submitted_at": "",
+  "model": "gpt-image-2",
+  "prompt_file": "prompts/image.txt",
+  "settings": {
+    "aspect_ratio": "9:16",
+    "duration_seconds": null,
+    "resolution": "1080p",
+    "generate_audio": false,
+    "start_frame": "",
+    "reference_images": []
+  },
+  "output_path": "",
+  "status": "not_submitted",
+  "review_outcome": "",
+  "review_note": "",
+  "cost": null
+}

@@ -1,0 +1,7 @@
+# Journals are the record — commit them. Ignore only scratch and media output.
+output/
+*.mp4
+*.mov
+*.webm
+__pycache__/
+.pytest_cache/

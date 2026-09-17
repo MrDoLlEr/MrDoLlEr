@@ -1,0 +1,18 @@
+Inspect the supplied reference video before writing any generation prompt.
+Extract timestamped frames around the main action.
+
+Describe only what is visible:
+- what is present in the first frame;
+- what action causes the change;
+- the order in which objects or body parts move;
+- the camera movement;
+- the final payoff.
+
+Propose three original concepts using that action sequence.
+For the selected concept, choose the smallest useful set of reference
+images. Explain what each image controls.
+
+Generate the stills first. Inspect them before animating.
+Save exact prompts, model settings, job handles and output files.
+Review intermediate video frames against the original action sequence.
+Return the finished clip and any remaining defects.
