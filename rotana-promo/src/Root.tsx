@@ -1,6 +1,7 @@
 import React from 'react';
 import {Composition} from 'remotion';
 import {Promo} from './Promo';
+import {LogoStill} from './LogoStill';
 import {FPS, DURATION_FRAMES} from './theme';
 
 export const RemotionRoot: React.FC = () => {
@@ -26,6 +27,15 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
         defaultProps={{format: 'web' as const}}
+      />
+      {/* Logo alone on transparency, for export into After Effects. */}
+      <Composition
+        id="LogoStill"
+        component={LogoStill}
+        durationInFrames={1}
+        fps={FPS}
+        width={1024}
+        height={1024}
       />
     </>
   );
