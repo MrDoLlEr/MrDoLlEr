@@ -1,0 +1,20 @@
+{
+  "v03": {
+    "numerical": "recent views/hour roughly doubled between the two pre-cutoff intervals",
+    "visual": "hands visibly cause the opening at ~2.4s; ending frames return to the opening object",
+    "missing": "no same-age baseline for this creator; retention and completion unavailable",
+    "may_fail": "growth may be carried by a featured sound rather than the action sequence"
+  },
+  "v19": {
+    "numerical": "smaller total than the cohort leaders but the steepest change in velocity",
+    "visual": "single continuous emergence, subject recognizable in the first frame",
+    "missing": "first observation was taken at 11h of age, not 6h",
+    "may_fail": "one account, one upload \u2014 no independent creator showing the same mechanism"
+  },
+  "v10": {
+    "numerical": "steady, not accelerating; selected on the visual mechanism, flagged as the weakest pick",
+    "visual": "compact object expands into usable furniture and a person makes contact with it",
+    "missing": "no share counts; distribution source unobservable",
+    "may_fail": "a topical event around the creator could explain the lift"
+  }
+}

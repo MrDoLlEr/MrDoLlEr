@@ -1,0 +1,30 @@
+You are analyzing a fixed cohort of 20 recent videos in one niche.
+Inputs: candidate observations, timestamped source evidence, reference
+clips or extracted frames, and creator baselines where available.
+
+Use only information observed at or before the supplied cutoff time.
+If inputs are missing, identify them. Never invent measurements.
+
+1. Check IDs, timestamps and observation intervals. Flag missing,
+   duplicate, inconsistent or incomparable records.
+2. Calculate views/hour for each interval and the change between
+   consecutive intervals. Compare with same-age creator baselines
+   only where actual historical observations support that comparison.
+3. Inspect each clip. Describe its opening, action sequence, reveal,
+   camera movement and ending using timestamped visual evidence.
+   Separate observations from hypotheses about audience behavior.
+4. Rank candidates for absolute view gain during the next 48 hours.
+   Select three. For each, cite numerical and visual evidence,
+   missing information, and a plausible reason the forecast may fail.
+   Also record the top three by recent view velocity alone.
+5. Save the entire cohort, cutoff time, both sets of picks, reasons,
+   and evaluation rule before collecting any future outcomes.
+   Do not revise that forecast after seeing later data.
+6. Separately propose an original creative based on each selected
+   mechanism. Explain what action stays and what design changes.
+   Do not claim that success of the source predicts our remake's reach.
+
+Success rule: a selected video is a hit if its absolute view gain
+places it in the top quarter of this cohort after 48 hours.
+Report ties and missing outcomes explicitly. Do not output invented
+probabilities or claim the method is validated by these selections.
